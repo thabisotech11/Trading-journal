@@ -1,0 +1,577 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1" />
+<title>US30 Trading Journal — Performance Terminal</title>
+<meta name="description" content="Professional US30 trading journal and performance analytics for Smart Money Concepts, liquidity analysis and session-based execution." />
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' rx='18' fill='%230A0D12'/%3E%3Cpath d='M20 68 L38 46 L52 58 L80 26' stroke='%23C9A227' stroke-width='7' fill='none' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E" />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css" />
+<link rel="stylesheet" href="style.css" />
+</head>
+<body>
+
+<div id="toast-container" aria-live="polite"></div>
+
+<header id="app-header">
+  <button id="sidebar-toggle" class="icon-btn" aria-label="Toggle navigation"><i class="fa-solid fa-bars"></i></button>
+  <div class="brand">
+    <span class="brand-mark"><i class="fa-solid fa-chart-line"></i></span>
+    <div class="brand-text">
+      <span class="brand-name">US30 Journal</span>
+      <span class="brand-sub" id="header-account-name">US30 Prop Account</span>
+    </div>
+  </div>
+  <div class="topbar-stats" id="topbar-stats">
+    <div class="topbar-stat">
+      <span class="topbar-label">Balance</span>
+      <span class="topbar-value" id="topbar-balance">—</span>
+    </div>
+    <div class="topbar-stat">
+      <span class="topbar-label">Today</span>
+      <span class="topbar-value" id="topbar-daily-pnl">—</span>
+    </div>
+    <div class="topbar-stat">
+      <span class="topbar-label">Win Rate</span>
+      <span class="topbar-value" id="topbar-winrate">—</span>
+    </div>
+    <div class="topbar-stat">
+      <span class="topbar-label">Streak</span>
+      <span class="topbar-value" id="topbar-streak">—</span>
+    </div>
+    <div class="topbar-stat" id="topbar-daily-stop-wrap" style="display:none">
+      <span class="badge badge-danger"><i class="fa-solid fa-hand"></i> Daily Stop</span>
+    </div>
+  </div>
+  <button class="btn btn-primary btn-sm" data-nav="logtrade"><i class="fa-solid fa-plus"></i><span class="btn-label"> Log Trade</span></button>
+</header>
+
+<div id="app-shell">
+  <nav id="sidebar" aria-label="Primary">
+    <ul class="nav-list">
+      <li><a href="#" class="nav-link active" data-page="dashboard"><i class="fa-solid fa-gauge-high"></i><span>Dashboard</span></a></li>
+      <li><a href="#" class="nav-link" data-page="journal"><i class="fa-solid fa-book"></i><span>Journal</span></a></li>
+      <li><a href="#" class="nav-link" data-page="logtrade"><i class="fa-solid fa-plus"></i><span>Log Trade</span></a></li>
+      <li><a href="#" class="nav-link" data-page="analytics"><i class="fa-solid fa-chart-column"></i><span>Analytics</span></a></li>
+      <li><a href="#" class="nav-link" data-page="sessionintel"><i class="fa-solid fa-clock"></i><span>Session Intelligence</span></a></li>
+      <li><a href="#" class="nav-link" data-page="strategyintel"><i class="fa-solid fa-brain"></i><span>Strategy Intelligence</span></a></li>
+      <li><a href="#" class="nav-link" data-page="calendar"><i class="fa-solid fa-calendar-days"></i><span>Calendar</span></a></li>
+      <li><a href="#" class="nav-link" data-page="dailyreview"><i class="fa-solid fa-sun"></i><span>Daily Review</span></a></li>
+      <li><a href="#" class="nav-link" data-page="weeklyreview"><i class="fa-solid fa-calendar-week"></i><span>Weekly Review</span></a></li>
+      <li><a href="#" class="nav-link" data-page="monthlyreview"><i class="fa-solid fa-calendar"></i><span>Monthly Review</span></a></li>
+      <li><a href="#" class="nav-link" data-page="rules"><i class="fa-solid fa-scale-balanced"></i><span>Rules</span></a></li>
+      <li><a href="#" class="nav-link" data-page="settings"><i class="fa-solid fa-gear"></i><span>Settings</span></a></li>
+    </ul>
+  </nav>
+  <div id="sidebar-backdrop"></div>
+
+  <main id="main-content">
+
+    <!-- ================= DASHBOARD ================= -->
+    <section id="page-dashboard" class="page">
+      <div class="page-head">
+        <div><h1>Dashboard</h1><p class="page-sub">Live performance snapshot.</p></div>
+        <button class="btn btn-primary" data-nav="logtrade"><i class="fa-solid fa-plus"></i> Log Trade</button>
+      </div>
+      <div id="daily-stop-banner" class="alert-banner alert-danger hidden"></div>
+      <div id="demo-data-banner" class="alert-banner alert-info hidden">
+        <span><i class="fa-solid fa-flask"></i> You're looking at labeled demo data so the terminal isn't empty. Log a real trade any time — demo trades stay clearly marked until you clear them.</span>
+        <button id="btn-clear-demo-dash" class="link-btn">Clear demo data</button>
+      </div>
+      <div id="performance-cards" class="perf-cards"></div>
+      <div class="grid-2">
+        <div class="panel">
+          <div class="panel-head"><h2>Equity Curve</h2></div>
+          <div class="chart-wrap"><canvas id="chart-dash-equity"></canvas></div>
+        </div>
+        <div class="panel">
+          <div class="panel-head"><h2>Drawdown</h2></div>
+          <div class="chart-wrap"><canvas id="chart-dash-drawdown"></canvas></div>
+        </div>
+      </div>
+      <div class="panel">
+        <div class="panel-head"><h2>Account Metrics</h2></div>
+        <div id="account-metrics-grid" class="metrics-grid"></div>
+      </div>
+      <div class="grid-2">
+        <div class="panel">
+          <div class="panel-head"><h2>Recent Trades</h2><a href="#" data-nav="journal" class="link-btn">View journal</a></div>
+          <div id="recent-trades-list" class="mini-trade-list"></div>
+        </div>
+        <div class="panel">
+          <div class="panel-head"><h2>Strategy Intelligence</h2><a href="#" data-nav="strategyintel" class="link-btn">View all</a></div>
+          <div id="dash-insights-preview" class="insights-list"></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ================= JOURNAL ================= -->
+    <section id="page-journal" class="page hidden">
+      <div class="page-head">
+        <div><h1>Journal</h1><p class="page-sub">Every logged trade — searchable, sortable, filterable.</p></div>
+        <button class="btn btn-primary" data-nav="logtrade"><i class="fa-solid fa-plus"></i> Log Trade</button>
+      </div>
+      <div class="panel filter-bar">
+        <input type="text" id="journal-search" class="input" placeholder="Search notes, setup, session…" />
+        <select id="filter-session" class="input"><option value="">All Sessions</option></select>
+        <select id="filter-setup" class="input"><option value="">All Setups</option></select>
+        <select id="filter-direction" class="input">
+          <option value="">Buy / Sell</option><option value="buy">Buy</option><option value="sell">Sell</option>
+        </select>
+        <select id="filter-result" class="input">
+          <option value="">Win / Loss</option><option value="win">Win</option><option value="loss">Loss</option><option value="breakeven">Breakeven</option>
+        </select>
+        <select id="filter-grade" class="input"><option value="">All Grades</option></select>
+        <input type="date" id="filter-date-from" class="input" title="From date" />
+        <input type="date" id="filter-date-to" class="input" title="To date" />
+        <button id="btn-clear-filters" class="btn btn-ghost btn-sm">Clear</button>
+      </div>
+      <div class="panel table-panel">
+        <div class="table-scroll">
+        <table class="data-table" id="journal-table">
+          <thead><tr>
+            <th data-sort="date">Date</th><th>Trade</th><th data-sort="direction">Direction</th><th data-sort="session">Session</th>
+            <th data-sort="setup">Setup</th><th data-sort="entryPrice">Entry</th><th data-sort="exitPrice">Exit</th>
+            <th data-sort="riskAmount">Risk</th><th data-sort="rMultiple">R</th><th data-sort="pnl">P&amp;L</th>
+            <th data-sort="setupGrade">Grade</th><th data-sort="disciplineScore">Discipline</th><th data-sort="result">Result</th>
+          </tr></thead>
+          <tbody id="journal-tbody"></tbody>
+        </table>
+        </div>
+        <div id="journal-empty" class="empty-state hidden"></div>
+      </div>
+    </section>
+
+    <!-- ================= LOG TRADE ================= -->
+    <section id="page-logtrade" class="page hidden">
+      <div class="page-head">
+        <div><h1 id="logtrade-title">Log Trade</h1><p class="page-sub">Plan it, execute it, review it — one record, start to finish.</p></div>
+        <span class="status-pill" id="logtrade-status-badge">Planning</span>
+      </div>
+
+      <div id="logtrade-warnings" class="warnings-stack"></div>
+
+      <div class="form-tabs" id="form-tabs">
+        <button type="button" class="form-tab active" data-tab="info">Trade Info</button>
+        <button type="button" class="form-tab" data-tab="smc">SMC Analysis</button>
+        <button type="button" class="form-tab" data-tab="liquidity">Liquidity Map</button>
+        <button type="button" class="form-tab" data-tab="setup">Setup &amp; Grade</button>
+        <button type="button" class="form-tab" data-tab="mtf">Multi-Timeframe</button>
+        <button type="button" class="form-tab" data-tab="psychology">Psychology</button>
+        <button type="button" class="form-tab" data-tab="risk">Risk Management</button>
+        <button type="button" class="form-tab" data-tab="rules">Rule Compliance</button>
+        <button type="button" class="form-tab" data-tab="checklist">Pre-Trade Checklist</button>
+        <button type="button" class="form-tab" data-tab="screenshots">Screenshots</button>
+      </div>
+
+      <form id="trade-form">
+        <!-- INFO -->
+        <div class="tab-panel active" data-panel="info">
+          <div class="panel">
+            <div class="field-grid">
+              <div class="field"><label>Trade ID</label><input type="text" id="tf-id" class="input" readonly placeholder="assigned on save" /></div>
+              <div class="field"><label>Date <span class="req">*</span></label><input type="date" id="tf-date" class="input" /></div>
+              <div class="field"><label>Trading Day</label><input type="text" id="tf-tradingDay" class="input" readonly /></div>
+              <div class="field"><label>Session <span class="req">*</span></label><select id="tf-session" class="input"></select></div>
+              <div class="field"><label>Market</label><input type="text" class="input" value="US30" readonly /></div>
+              <div class="field"><label>Timeframe</label><select id="tf-timeframe" class="input"></select></div>
+              <div class="field"><label>Direction <span class="req">*</span></label>
+                <div class="segmented" id="tf-direction">
+                  <button type="button" class="seg-btn seg-buy active" data-value="buy"><i class="fa-solid fa-arrow-trend-up"></i> Buy</button>
+                  <button type="button" class="seg-btn seg-sell" data-value="sell"><i class="fa-solid fa-arrow-trend-down"></i> Sell</button>
+                </div>
+              </div>
+              <div class="field"><label>Entry Time</label><input type="time" id="tf-entryTime" class="input" /></div>
+              <div class="field"><label>Exit Time</label><input type="time" id="tf-exitTime" class="input" /></div>
+              <div class="field"><label>Entry Price <span class="req">*</span></label><input type="number" step="0.1" id="tf-entryPrice" class="input mono" /></div>
+              <div class="field"><label>Stop Loss <span class="req">*</span></label><input type="number" step="0.1" id="tf-stopLoss" class="input mono" /></div>
+              <div class="field"><label>Take Profit</label><input type="number" step="0.1" id="tf-takeProfit" class="input mono" /></div>
+              <div class="field"><label>Exit Price</label><input type="number" step="0.1" id="tf-exitPrice" class="input mono" /></div>
+              <div class="field"><label>Position Size <span id="tf-posSizeUnitLabel">(lots)</span></label><input type="number" step="0.01" id="tf-positionSize" class="input mono" /></div>
+              <div class="field"><label>Risk % <span class="req">*</span></label><input type="number" step="0.01" id="tf-riskPercent" class="input mono" /></div>
+              <div class="field"><label>Risk Amount</label><input type="number" step="0.01" id="tf-riskAmount" class="input mono" /></div>
+              <div class="field">
+                <label>Profit / Loss</label>
+                <div class="input-with-btn">
+                  <input type="number" step="0.01" id="tf-pnl" class="input mono" />
+                  <button type="button" id="btn-suggest-pnl" class="btn btn-ghost btn-sm" title="Suggest from price move × position size × point value (set in Settings)">Suggest</button>
+                </div>
+              </div>
+              <div class="field"><label>R-Multiple</label><input type="text" id="tf-rMultiple" class="input mono" readonly /></div>
+              <div class="field"><label>Commission</label><input type="number" step="0.01" id="tf-commission" class="input mono" value="0" /></div>
+              <div class="field"><label>Result</label><input type="text" id="tf-result" class="input" readonly /></div>
+            </div>
+            <div class="field field-full"><label>Notes</label><textarea id="tf-notes" class="input" rows="3" placeholder="Anything else worth remembering about this trade…"></textarea></div>
+          </div>
+        </div>
+
+        <!-- SMC -->
+        <div class="tab-panel" data-panel="smc">
+          <div id="smc-checklist-container"></div>
+        </div>
+
+        <!-- LIQUIDITY MAP -->
+        <div class="tab-panel" data-panel="liquidity">
+          <div class="panel">
+            <div class="field-grid">
+              <div class="field field-full"><label>Where liquidity was located</label><input type="text" id="lm-location" class="input" placeholder="e.g. Resting above Asian session high" /></div>
+              <div class="field field-full"><label>Which liquidity was targeted</label><input type="text" id="lm-targeted" class="input" placeholder="e.g. Previous day low" /></div>
+              <div class="field"><label>Liquidity Direction</label><select id="lm-direction" class="input"></select></div>
+              <div class="field"><label>Liquidity Outcome</label><select id="lm-outcome" class="input"></select></div>
+              <div class="field"><label class="checkbox-label"><input type="checkbox" id="lm-swept" /> Liquidity was swept</label></div>
+              <div class="field"><label>Sweep Quality</label>
+                <select id="lm-sweepQuality" class="input">
+                  <option value="">—</option><option value="real">Real</option><option value="failed">Failed</option>
+                </select>
+              </div>
+              <div class="field field-full"><label>Post-Sweep Direction</label><input type="text" id="lm-postSweepDirection" class="input" /></div>
+              <div class="field"><label>Intended Liquidity Target</label><input type="text" id="lm-intendedTarget" class="input" /></div>
+              <div class="field"><label>Final Liquidity Target Reached</label><input type="text" id="lm-finalTargetReached" class="input" /></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- SETUP & GRADE -->
+        <div class="tab-panel" data-panel="setup">
+          <div class="panel">
+            <div class="field-grid">
+              <div class="field field-full"><label>Setup Type <span class="req">*</span></label><select id="tf-setup" class="input"></select></div>
+              <div class="field"><label>Setup Grade</label><select id="tf-setupGrade" class="input"></select></div>
+              <div class="field"><label>Confidence (1–10): <span id="tf-confidence-out">5</span></label><input type="range" min="1" max="10" id="tf-confidence" class="range" value="5" /></div>
+            </div>
+            <div class="readout-row">
+              <div class="readout"><span class="readout-label">Confluence Score</span><span class="readout-value" id="setup-confluence-readout">0%</span></div>
+              <p class="hint">Calculated automatically from the SMC Analysis tab — check off what you actually confirmed on chart.</p>
+            </div>
+          </div>
+        </div>
+
+        <!-- MULTI-TIMEFRAME -->
+        <div class="tab-panel" data-panel="mtf">
+          <div id="mtf-container"></div>
+        </div>
+
+        <!-- PSYCHOLOGY -->
+        <div class="tab-panel" data-panel="psychology">
+          <div class="panel">
+            <div class="panel-head"><h2>Before Trade</h2></div>
+            <div id="psych-before-container" class="field-grid"></div>
+          </div>
+          <div class="panel">
+            <div class="panel-head"><h2>After Trade</h2><span class="hint">Fill in once the trade is closed — this drives your Discipline Score.</span></div>
+            <div id="psych-after-container" class="toggle-grid"></div>
+            <div class="readout-row">
+              <div class="readout"><span class="readout-label">Discipline Score</span><span class="readout-value" id="discipline-readout">—</span></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- RISK MANAGEMENT -->
+        <div class="tab-panel" data-panel="risk">
+          <div class="panel">
+            <div class="readout-row wrap">
+              <div class="readout"><span class="readout-label">Account Balance</span><span class="readout-value mono" id="risk-balance">—</span></div>
+              <div class="readout"><span class="readout-label">Stop Distance</span><span class="readout-value mono" id="risk-stopDist">—</span></div>
+              <div class="readout"><span class="readout-label">Target Distance</span><span class="readout-value mono" id="risk-targetDist">—</span></div>
+              <div class="readout"><span class="readout-label">Risk : Reward</span><span class="readout-value mono" id="risk-rr">—</span></div>
+              <div class="readout"><span class="readout-label">Potential Profit</span><span class="readout-value mono" id="risk-potentialProfit">—</span></div>
+              <div class="readout"><span class="readout-label">Potential Loss</span><span class="readout-value mono" id="risk-potentialLoss">—</span></div>
+            </div>
+            <div id="risk-warnings" class="warnings-stack"></div>
+            <div class="field-grid">
+              <div class="field"><label>Point Value ($ / point / lot) <span class="hint-inline">optional, for P&amp;L Suggest</span></label><input type="number" step="0.01" id="tf-pointValue" class="input mono" placeholder="e.g. 1.00" /></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- RULE COMPLIANCE -->
+        <div class="tab-panel" data-panel="rules">
+          <div class="panel">
+            <div class="panel-head"><h2>Rule Compliance</h2><span class="readout-value" id="rule-compliance-readout">0/0</span></div>
+            <div id="rule-compliance-form-container" class="rules-list"></div>
+          </div>
+        </div>
+
+        <!-- PRE-TRADE CHECKLIST -->
+        <div class="tab-panel" data-panel="checklist">
+          <div class="panel">
+            <div class="panel-head"><h2>PRE-TRADE CHECKLIST</h2></div>
+            <p class="hint">Everything below must be green before this trade can be saved as Executed.</p>
+            <div id="pretrade-checklist-container" class="checklist-status-list"></div>
+          </div>
+        </div>
+
+        <!-- SCREENSHOTS -->
+        <div class="tab-panel" data-panel="screenshots">
+          <div id="screenshots-container" class="screenshot-grid"></div>
+        </div>
+
+        <div class="form-footer">
+          <span class="storage-hint" id="storage-usage-hint"></span>
+          <div class="form-footer-actions">
+            <button type="button" id="btn-delete-trade" class="btn btn-danger hidden">Delete</button>
+            <button type="button" id="btn-save-planned" class="btn btn-ghost">Save as Planned</button>
+            <button type="submit" id="btn-save-executed" class="btn btn-primary">Save as Executed</button>
+          </div>
+        </div>
+      </form>
+    </section>
+
+    <!-- ================= ANALYTICS ================= -->
+    <section id="page-analytics" class="page hidden">
+      <div class="page-head"><div><h1>Analytics</h1><p class="page-sub">Performance broken down every way that matters.</p></div></div>
+      <div class="panel">
+        <div class="panel-head"><h2>Advanced Performance Metrics</h2></div>
+        <div id="advanced-metrics-grid" class="metrics-grid"></div>
+      </div>
+      <div class="chart-grid">
+        <div class="panel chart-panel"><div class="panel-head"><h2>Equity Curve</h2></div><div class="chart-wrap"><canvas id="chart-equity"></canvas></div></div>
+        <div class="panel chart-panel"><div class="panel-head"><h2>Drawdown Curve</h2></div><div class="chart-wrap"><canvas id="chart-drawdown"></canvas></div></div>
+        <div class="panel chart-panel"><div class="panel-head"><h2>Daily P&amp;L</h2></div><div class="chart-wrap"><canvas id="chart-daily-pnl"></canvas></div></div>
+        <div class="panel chart-panel"><div class="panel-head"><h2>Weekly P&amp;L</h2></div><div class="chart-wrap"><canvas id="chart-weekly-pnl"></canvas></div></div>
+        <div class="panel chart-panel"><div class="panel-head"><h2>Monthly P&amp;L</h2></div><div class="chart-wrap"><canvas id="chart-monthly-pnl"></canvas></div></div>
+        <div class="panel chart-panel"><div class="panel-head"><h2>Win / Loss Distribution</h2></div><div class="chart-wrap"><canvas id="chart-winloss"></canvas></div></div>
+        <div class="panel chart-panel"><div class="panel-head"><h2>R-Multiple Distribution</h2></div><div class="chart-wrap"><canvas id="chart-rdist"></canvas></div></div>
+        <div class="panel chart-panel"><div class="panel-head"><h2>Session Performance</h2></div><div class="chart-wrap"><canvas id="chart-session-perf"></canvas></div></div>
+        <div class="panel chart-panel"><div class="panel-head"><h2>Setup Performance</h2></div><div class="chart-wrap"><canvas id="chart-setup-perf"></canvas></div></div>
+        <div class="panel chart-panel"><div class="panel-head"><h2>Long vs Short</h2></div><div class="chart-wrap"><canvas id="chart-long-short"></canvas></div></div>
+        <div class="panel chart-panel"><div class="panel-head"><h2>Time-of-Day Performance</h2></div><div class="chart-wrap"><canvas id="chart-tod"></canvas></div></div>
+      </div>
+    </section>
+
+    <!-- ================= SESSION INTELLIGENCE ================= -->
+    <section id="page-sessionintel" class="page hidden">
+      <div class="page-head"><div><h1>US30 Session Intelligence</h1><p class="page-sub">New York Open, Expansion, London, Asian and Close — compared head to head.</p></div></div>
+      <div id="session-highlight-banner" class="alert-banner alert-success hidden"></div>
+      <div class="panel table-panel">
+        <div class="table-scroll">
+        <table class="data-table" id="session-intel-table">
+          <thead><tr><th>Session</th><th>Trades</th><th>Win Rate</th><th>Net P&amp;L</th><th>Avg R</th><th>Profit Factor</th><th>Avg Trade</th><th>Best Setup</th><th>Worst Setup</th></tr></thead>
+          <tbody id="session-intel-tbody"></tbody>
+        </table>
+        </div>
+      </div>
+    </section>
+
+    <!-- ================= STRATEGY INTELLIGENCE ================= -->
+    <section id="page-strategyintel" class="page hidden">
+      <div class="page-head"><div><h1>Strategy Intelligence</h1><p class="page-sub">Patterns detected directly from your journal — nothing here is guessed.</p></div></div>
+      <div id="strategy-insights-list" class="insights-list-full"></div>
+      <div id="strategy-insights-empty" class="empty-state hidden"></div>
+    </section>
+
+    <!-- ================= CALENDAR ================= -->
+    <section id="page-calendar" class="page hidden">
+      <div class="page-head">
+        <div><h1>Calendar</h1><p class="page-sub">Every trading day at a glance.</p></div>
+        <div class="calendar-nav">
+          <button id="cal-prev" class="btn btn-ghost btn-sm" aria-label="Previous month"><i class="fa-solid fa-chevron-left"></i></button>
+          <span id="cal-month-label" class="cal-month-label"></span>
+          <button id="cal-next" class="btn btn-ghost btn-sm" aria-label="Next month"><i class="fa-solid fa-chevron-right"></i></button>
+        </div>
+      </div>
+      <div class="panel">
+        <div class="calendar-weekdays"><span>Mon</span><span>Tue</span><span>Wed</span><span>Thu</span><span>Fri</span><span>Sat</span><span>Sun</span></div>
+        <div id="calendar-grid" class="calendar-grid"></div>
+      </div>
+    </section>
+
+    <!-- ================= DAILY REVIEW ================= -->
+    <section id="page-dailyreview" class="page hidden">
+      <div class="page-head">
+        <div><h1>Daily Review</h1><p class="page-sub">Close the day out properly.</p></div>
+        <input type="date" id="dr-date-picker" class="input" />
+      </div>
+      <div id="dr-stop-banner" class="alert-banner alert-danger hidden"></div>
+      <div id="daily-review-stats" class="metrics-grid"></div>
+      <div class="panel">
+        <div class="panel-head"><h2>Trades on this day</h2></div>
+        <div id="dr-trades-list" class="mini-trade-list"></div>
+      </div>
+      <div class="panel">
+        <div class="panel-head"><h2>Reflection</h2></div>
+        <form id="daily-review-form" class="review-form">
+          <div class="field-grid">
+            <div class="field"><label>Best Trade</label><select id="dr-bestTrade" class="input"></select></div>
+            <div class="field"><label>Worst Trade</label><select id="dr-worstTrade" class="input"></select></div>
+            <div class="field field-full"><label>Biggest Mistake</label><input type="text" id="dr-biggestMistake" class="input" /></div>
+            <div class="field field-full"><label>Best Decision</label><input type="text" id="dr-bestDecision" class="input" /></div>
+            <div class="field"><label>Emotional State</label><input type="text" id="dr-emotionalState" class="input" placeholder="e.g. Calm, focused" /></div>
+            <div class="field field-full"><label>Lessons</label><textarea id="dr-lessons" class="input" rows="2"></textarea></div>
+            <div class="field field-full"><label>Tomorrow's Focus</label><textarea id="dr-tomorrowFocus" class="input" rows="2"></textarea></div>
+          </div>
+          <button type="submit" class="btn btn-primary">Save Daily Review</button>
+        </form>
+      </div>
+    </section>
+
+    <!-- ================= WEEKLY REVIEW ================= -->
+    <section id="page-weeklyreview" class="page hidden">
+      <div class="page-head">
+        <div><h1>Weekly Review</h1><p class="page-sub">Zoom out to the week.</p></div>
+        <input type="week" id="wr-week-picker" class="input" />
+      </div>
+      <div id="weekly-review-stats" class="metrics-grid"></div>
+      <div class="panel">
+        <div class="panel-head"><h2>Auto-Detected This Week</h2></div>
+        <div id="wr-auto-detected" class="insights-list"></div>
+      </div>
+      <div class="panel">
+        <div class="panel-head"><h2>Reflection</h2></div>
+        <form id="weekly-review-form" class="review-form">
+          <div class="field-grid">
+            <div class="field field-full"><label>Key Improvement</label><textarea id="wr-keyImprovement" class="input" rows="2"></textarea></div>
+            <div class="field field-full"><label>Notes on Rule Violations</label><textarea id="wr-ruleViolationsNote" class="input" rows="2"></textarea></div>
+          </div>
+          <button type="submit" class="btn btn-primary">Save Weekly Review</button>
+        </form>
+      </div>
+    </section>
+
+    <!-- ================= MONTHLY REVIEW ================= -->
+    <section id="page-monthlyreview" class="page hidden">
+      <div class="page-head">
+        <div><h1>Monthly Review</h1><p class="page-sub">The full-month scorecard.</p></div>
+        <input type="month" id="mr-month-picker" class="input" />
+      </div>
+      <div id="monthly-review-stats" class="metrics-grid"></div>
+      <div class="panel">
+        <div class="panel-head"><h2>Trader Development</h2></div>
+        <form id="monthly-review-form" class="review-form">
+          <div class="field-grid">
+            <div class="field field-full"><label>Wins — What improved?</label><textarea id="mr-wins" class="input" rows="2"></textarea></div>
+            <div class="field field-full"><label>Weaknesses — What repeatedly caused losses?</label><textarea id="mr-weaknesses" class="input" rows="2"></textarea></div>
+            <div class="field field-full"><label>Next Month — What must change?</label><textarea id="mr-nextMonth" class="input" rows="2"></textarea></div>
+          </div>
+          <button type="submit" class="btn btn-primary">Save Monthly Review</button>
+        </form>
+      </div>
+    </section>
+
+    <!-- ================= RULES ================= -->
+    <section id="page-rules" class="page hidden">
+      <div class="page-head"><div><h1>Rules</h1><p class="page-sub">Your trading rules — every trade is checked against these automatically where possible.</p></div></div>
+      <div class="panel">
+        <form id="add-rule-form" class="inline-form">
+          <input type="text" id="new-rule-text" class="input" placeholder="Add a custom rule, e.g. Never trade the first 5 minutes of NY open" />
+          <button type="submit" class="btn btn-primary">Add Rule</button>
+        </form>
+      </div>
+      <div class="panel"><div id="rules-list" class="rules-list"></div></div>
+    </section>
+
+    <!-- ================= SETTINGS ================= -->
+    <section id="page-settings" class="page hidden">
+      <div class="page-head"><div><h1>Settings</h1><p class="page-sub">Configure the terminal to match your account and rules.</p></div></div>
+
+      <div class="panel">
+        <div class="panel-head"><h2>Account</h2></div>
+        <form id="settings-form">
+          <div class="field-grid">
+            <div class="field"><label>Account Name</label><input type="text" id="st-accountName" class="input" /></div>
+            <div class="field"><label>Trader Name</label><input type="text" id="st-traderName" class="input" /></div>
+            <div class="field"><label>Starting Balance</label><input type="number" step="0.01" id="st-startingBalance" class="input mono" /></div>
+            <div class="field"><label>Currency</label><select id="st-currency" class="input"></select></div>
+            <div class="field"><label>Date Format</label><select id="st-dateFormat" class="input"></select></div>
+            <div class="field"><label>Theme</label><select id="st-theme" class="input"><option value="dark">Dark (Terminal)</option><option value="light">Light</option></select></div>
+            <div class="field"><label>Position Size Unit</label><input type="text" id="st-positionSizeUnit" class="input" /></div>
+          </div>
+          <div class="panel-head panel-head-inset"><h2>Risk Rules</h2></div>
+          <div class="field-grid">
+            <div class="field"><label>Maximum Risk per Trade (%)</label><input type="number" step="0.01" id="st-maxRiskPercent" class="input mono" /></div>
+            <div class="field"><label>Minimum R:R</label><input type="number" step="0.1" id="st-minRR" class="input mono" /></div>
+            <div class="field"><label>Maximum Daily Loss (R)</label><input type="number" step="0.1" id="st-maxDailyLossR" class="input mono" /></div>
+          </div>
+          <div class="panel-head panel-head-inset"><h2>Session Times <span class="hint">(24h, account-local)</span></h2></div>
+          <div id="settings-sessions-container" class="field-grid"></div>
+          <button type="submit" class="btn btn-primary">Save Settings</button>
+        </form>
+      </div>
+
+      <div class="panel">
+        <div class="panel-head"><h2>Local Storage</h2></div>
+        <div class="storage-meter"><div class="storage-meter-fill" id="storage-meter-fill"></div></div>
+        <p class="hint" id="storage-meter-label">—</p>
+      </div>
+
+      <div class="panel">
+        <div class="panel-head"><h2>Data</h2></div>
+        <div class="data-actions">
+          <button id="btn-export-csv" class="btn btn-secondary"><i class="fa-solid fa-file-csv"></i> Export CSV</button>
+          <button id="btn-export-json" class="btn btn-secondary"><i class="fa-solid fa-file-export"></i> Export JSON (backup)</button>
+          <label class="btn btn-secondary file-btn">
+            <i class="fa-solid fa-file-import"></i> Import Journal Data
+            <input type="file" id="btn-import-json" accept="application/json" hidden />
+          </label>
+          <button id="btn-clear-demo" class="btn btn-ghost"><i class="fa-solid fa-flask"></i> Clear Demo Data</button>
+          <button id="btn-wipe-all" class="btn btn-danger"><i class="fa-solid fa-trash"></i> Reset All Data</button>
+        </div>
+      </div>
+    </section>
+
+  </main>
+</div>
+
+<!-- ================= MODALS ================= -->
+<div class="modal-overlay hidden" id="modal-trade-detail">
+  <div class="modal modal-lg">
+    <div class="modal-head"><h2 id="td-title">Trade</h2><button class="modal-close" data-close-modal="modal-trade-detail"><i class="fa-solid fa-xmark"></i></button></div>
+    <div class="modal-body" id="td-body"></div>
+  </div>
+</div>
+
+<div class="modal-overlay hidden" id="modal-post-trade-review">
+  <div class="modal modal-lg">
+    <div class="modal-head"><h2>POST-TRADE REVIEW</h2><button class="modal-close" data-close-modal="modal-post-trade-review"><i class="fa-solid fa-xmark"></i></button></div>
+    <div class="modal-body" id="ptr-body"></div>
+  </div>
+</div>
+
+<div class="modal-overlay hidden" id="modal-day-detail">
+  <div class="modal">
+    <div class="modal-head"><h2 id="dd-title">Day</h2><button class="modal-close" data-close-modal="modal-day-detail"><i class="fa-solid fa-xmark"></i></button></div>
+    <div class="modal-body" id="dd-body"></div>
+  </div>
+</div>
+
+<div class="modal-overlay hidden" id="modal-confirm">
+  <div class="modal modal-sm">
+    <div class="modal-head"><h2 id="confirm-title">Are you sure?</h2><button class="modal-close" data-close-modal="modal-confirm"><i class="fa-solid fa-xmark"></i></button></div>
+    <div class="modal-body">
+      <p id="confirm-message"></p>
+      <div class="form-footer-actions">
+        <button class="btn btn-ghost" id="confirm-cancel-btn">Cancel</button>
+        <button class="btn btn-danger" id="confirm-ok-btn">Confirm</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="modal-overlay hidden" id="modal-image-preview">
+  <div class="modal modal-image">
+    <div class="modal-head"><h2 id="img-preview-title">Screenshot</h2><button class="modal-close" data-close-modal="modal-image-preview"><i class="fa-solid fa-xmark"></i></button></div>
+    <div class="modal-body"><img id="img-preview-src" alt="Screenshot preview" /></div>
+  </div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.5.1/chart.umd.min.js"></script>
+<script src="js/config.js"></script>
+<script src="js/storage.js"></script>
+<script src="js/calculations.js"></script>
+<script src="js/demoData.js"></script>
+<script src="js/insights.js"></script>
+<script src="js/ui.js"></script>
+<script src="js/charts.js"></script>
+<script src="js/tradeForm.js"></script>
+<script src="js/journal.js"></script>
+<script src="js/dashboard.js"></script>
+<script src="js/calendar.js"></script>
+<script src="js/reviews.js"></script>
+<script src="js/rules.js"></script>
+<script src="js/settings.js"></script>
+<script src="js/app.js"></script>
+</body>
+</html>
